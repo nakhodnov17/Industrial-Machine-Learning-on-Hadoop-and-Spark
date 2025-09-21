@@ -1,0 +1,133 @@
+\documentclass[10pt,fleqn]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphics}
+\usepackage{epsfig}
+\usepackage{bm}
+\usepackage[colorlinks,urlcolor=blue]{hyperref}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{verbatim}
+\usepackage{mdframed}
+\usepackage{dirtree}
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{float}
+
+\definecolor{codegray}{gray}{0.9}
+\newcommand{\code}[1]{%
+  \begingroup\setlength{\fboxsep}{1pt}%
+  \colorbox{codegray}{\texttt{\hspace*{2pt}\vphantom{Ay}#1\hspace*{2pt}}}%
+  \endgroup
+}
+
+% mdinlinecode command for including code snippets inline
+% (fake verbatim, so all special character should be escaped,
+% or textmode equivalents of special characters should be used)
+\definecolor{mdinlinecodeboxframecolor}{HTML}{DDDDDD}
+\definecolor{mdinlinecodeboxbackgroundcolor}{HTML}{F8F8F8}
+\newcommand{\mdinlinecode}[1]{%
+    \begin{tikzpicture}[baseline=0ex]%
+        \node[anchor=base,%
+            text height=0.9em,%
+            text depth=0.9ex,%
+            inner ysep=0pt,%
+            draw=mdinlinecodeboxframecolor,%
+            fill=mdinlinecodeboxbackgroundcolor,%
+            rounded corners=1.5pt] at (0,0) {\small\texttt{#1}};%
+    \end{tikzpicture}%
+}
+
+\newmdenv[font=\footnotesize,%
+linewidth=0.4pt,%
+roundcorner=2pt,%
+linecolor=mdinlinecodeboxframecolor,%
+backgroundcolor=mdinlinecodeboxbackgroundcolor,%
+settings={\setlength{\parindent}{0pt}}]{mdcdblk}
+\newenvironment{mdcodeblock}{\endgraf\verbatim}{\endverbatim}
+\BeforeBeginEnvironment{mdcodeblock}{\begin{mdcdblk}}
+\AfterEndEnvironment{mdcodeblock}{\end{mdcdblk}}
+
+\textheight=26cm % text height
+\textwidth=18cm % text width
+\oddsidemargin=-1cm % left margin
+\topmargin=-3cm % top margin
+\sloppy
+
+\newcounter{example}
+
+%-- Vectors in bold
+\def\vec#1{\mathchoice{\mbox{\boldmath$\displaystyle#1$}}
+{\mbox{\boldmath$\textstyle#1$}} {\mbox{\boldmath$\scriptstyle#1$}} {\mbox{\boldmath$\scriptscriptstyle#1$}}}
+
+\DeclareMathOperator{\B}{Bin}
+\DeclareMathOperator{\Ps}{Poiss}
+\DeclareMathOperator{\R}{Unif}
+\DeclareMathOperator{\sign}{\mathrm{sign}}
+\DeclareMathOperator{\softmax}{\mathrm{softmax}}
+\DeclareMathOperator{\loss}{\mathcal{L}}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+    \begin{tabular}{|p{17.5cm}|}
+        \hline
+        \begin{center} \Large Task 01. Hadoop. HDFS. \end{center}\\
+        \textbf{Industrial Machine Learning on Hadoop and Spark, Fall 2025}\\
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{tabbing}
+Task start date: September 21, 2025, 23:59CET.\\
+Hard Deadline: \textcolor{red}{\bf September 28, 2025, 23:59CET.}
+\end{tabbing}
+
+\section*{Assignment Statement}
+This assignment is aimed at introducing you to the Apache Hadoop infrastructure.
+
+The task consists of the single part:
+\begin{enumerate}
+\item Performing basic actions in the HDFS filesystem
+\end{enumerate}
+
+\begin{section}{Basic actions in HDFS (5\% for each point + 15\% for questions)}
+In this section, you need to write a script \mdinlinecode{hdfs.sh} that performs the following sequence of actions from the root directory of the Hadoop cluster’s \mdinlinecode{namenode}:
+\begin{enumerate}
+\item Create a local file \mdinlinecode{test.txt} with a size of $100$Mb
+\item Create HDFS directories \mdinlinecode{temp} and \mdinlinecode{logs}
+\item Upload the file \mdinlinecode{test.txt} into the \mdinlinecode{temp} directory
+\item View the properties of the uploaded file
+\item Move the file \mdinlinecode{test.txt} into the \mdinlinecode{logs} directory
+\item Set the replication factor for the file to $1$
+\item Copy \mdinlinecode{test.txt} to \mdinlinecode{test2.txt}
+\item Copy the directory \mdinlinecode{logs} into \mdinlinecode{logs2} using \mdinlinecode{hadoop distcp}
+\item Set file permissions to read and write only for the owner for \mdinlinecode{test2.txt} in the \mdinlinecode{logs2} directory
+\item Display the properties of all files in \mdinlinecode{logs2}
+\item View the size of all directories in \mdinlinecode{/}
+\item Delete the \mdinlinecode{logs} directory
+\item Run \mdinlinecode{fsck} on the \mdinlinecode{logs2} directory
+\item View the HDFS report via \mdinlinecode{dfsadmin}
+\item Move \mdinlinecode{/logs2/test2.txt} to the local folder \mdinlinecode{/}
+\item Append the contents of the local file \mdinlinecode{test2.txt} to the end of the file \mdinlinecode{/logs2/test.txt} in HDFS
+\item Output the size of each file in \mdinlinecode{/logs2} in Mb
+\end{enumerate}
+
+Each step must correspond to a single command. The execution result (stdout, stderr) of \mdinlinecode{hdfs.sh} must be saved in the file \mdinlinecode{hdfs.output.txt}.
+
+Also, answer the following questions in the file \mdinlinecode{hdfs.answers.md}:
+\begin{enumerate}
+\item How many block replicas are missing after running the \mdinlinecode{fsck} command? Explain the reason for the missing replicas. \textbf{(7\%)}
+\item What is the size of the HDFS filesystem? \textbf{(8\%)}
+\end{enumerate}
+
+As your submission, you must provide three files named exactly as follows: \mdinlinecode{hdfs.sh}, \mdinlinecode{hdfs.output.txt}, \mdinlinecode{hdfs.answers.md}.
+\end{section}
+
+\end{document}
