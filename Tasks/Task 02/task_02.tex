@@ -1,0 +1,385 @@
+\documentclass[10pt,fleqn]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphics}
+\usepackage{epsfig}
+\usepackage{bm}
+\usepackage[colorlinks,urlcolor=blue]{hyperref}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{verbatim}
+\usepackage{mdframed}
+\usepackage{dirtree}
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{float}
+
+\usepackage[T2A]{fontenc}
+\usepackage{nccmath}
+\usepackage{mathrsfs, amsthm}
+\usepackage{graphicx}
+\usepackage[footnotesize]{caption2}
+\usepackage{multirow}
+\usepackage{fancyvrb}
+\usepackage{etoolbox}
+\usepackage{pgfplotstable}
+\usepackage{minted}
+\usepackage[normalem]{ulem}  % для зачекивания текста
+\usepackage[left=15mm, top=12mm, right=15mm, bottom=12mm, nohead=10, nofoot=10]{geometry}
+
+\definecolor{codegray}{gray}{0.9}
+\newcommand{\code}[1]{%
+  \begingroup\setlength{\fboxsep}{1pt}%
+  \colorbox{codegray}{\texttt{\hspace*{2pt}\vphantom{Ay}#1\hspace*{2pt}}}%
+  \endgroup
+}
+
+% mdinlinecode command for including code snippets inline
+% (fake verbatim, so all special character should be escaped,
+% or textmode equivalents of special characters should be used)
+\definecolor{mdinlinecodeboxframecolor}{HTML}{DDDDDD}
+\definecolor{mdinlinecodeboxbackgroundcolor}{HTML}{F8F8F8}
+\newcommand{\mdinlinecode}[1]{%
+    \begin{tikzpicture}[baseline=0ex]%
+        \node[anchor=base,%
+            text height=0.9em,%
+            text depth=0.9ex,%
+            inner ysep=0pt,%
+            draw=mdinlinecodeboxframecolor,%
+            fill=mdinlinecodeboxbackgroundcolor,%
+            rounded corners=1.5pt] at (0,0) {\small\texttt{#1}};%
+    \end{tikzpicture}%
+}
+
+\newmdenv[font=\footnotesize,%
+linewidth=0.4pt,%
+roundcorner=2pt,%
+linecolor=mdinlinecodeboxframecolor,%
+backgroundcolor=mdinlinecodeboxbackgroundcolor,%
+settings={\setlength{\parindent}{0pt}}]{mdcdblk}
+\newenvironment{mdcodeblock}{\endgraf\verbatim}{\endverbatim}
+\BeforeBeginEnvironment{mdcodeblock}{\begin{mdcdblk}}
+\AfterEndEnvironment{mdcodeblock}{\end{mdcdblk}}
+
+\textheight=26cm
+\textwidth=18cm
+\oddsidemargin=-1cm
+\topmargin=-3cm
+\sloppy
+
+\newcounter{example}
+
+%-- Vector notation in bold
+\def\vec#1{\mathchoice{\mbox{\boldmath$\displaystyle#1$}}
+{\mbox{\boldmath$\textstyle#1$}} {\mbox{\boldmath$\scriptstyle#1$}} {\mbox{\boldmath$\scriptscriptstyle#1$}}}
+
+\DeclareMathOperator{\B}{Bin}
+\DeclareMathOperator{\Ps}{Poiss}
+\DeclareMathOperator{\R}{Unif}
+\DeclareMathOperator{\sign}{\mathrm{sign}}
+\DeclareMathOperator{\softmax}{\mathrm{softmax}}
+\DeclareMathOperator{\loss}{\mathcal{L}}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+    \begin{tabular}{|p{17.5cm}|}
+        \hline
+        \begin{center} \Large Task 02. MapReduce Matrix Multiplication \& RecSys. \end{center}\\
+        \textbf{Industrial Machine Learning on Hadoop and Spark, Fall 2025}\\
+        \hline
+    \end{tabular}
+\end{center}
+
+\
+
+\begin{tabbing}
+Task start date: October 14, 2025, 23:59CET.\\
+Hard Deadline: \textcolor{red}{\bf October 28, 2025, 23:59CET.}
+\end{tabbing}
+
+\section*{Assignment Description}
+This assignment is aimed at introducing the Apache Hadoop infrastructure.
+
+The assignment consists of two parts:
+\begin{enumerate}
+ \item Implementing and running a simple Matrix Multiplication program using MapReduce.
+ \item Implementing and running a complex Collaborative filtering pipeline using MapReduce.
+\end{enumerate}
+
+\begin{section}{Matrix Multiplication (40\%)}
+    In this part, you need to implement a Hadoop Streaming program that performs matrix multiplication.
+
+    Let $A \in \mathbb{R}^{n \times m}, B \in \mathbb{R}^{m \times k}, C = AB \in \mathbb{R}^{n \times k}$.
+
+    We will represent input data (i.e., matrices $A$ and $B$) as files \mdinlinecode{A.txt}, \mdinlinecode{B.txt}, where matrix elements are written line by line separated by spaces. Each row will be explicitly numbered. The result of the multiplication (\mdinlinecode{C.txt}) will be represented as key-value pairs, where the key is a pair (row number, column number). The order of rows will be ignored.
+    $$
+    A = \begin{pmatrix}
+    3 & 4 & 3 & 2 \\
+    0 & 5 & 2 & 1 \\
+    0 & 4 & 2 & 0
+    \end{pmatrix}  \Longrightarrow
+    \underbrace{
+    \begin{tabular}{ccccc}
+        0 & 3 & 4 & 3 & 2 \\
+        1 & 0 & 5 & 2 & 1 \\
+        2 & 0 & 4 & 2 & 0
+    \end{tabular}
+    }_\text{A.txt} \quad\quad\quad\quad\quad\quad
+    C = \begin{pmatrix}
+    1 & 2 \\
+    3 & 4 \\
+    \end{pmatrix}  \Longrightarrow
+    \underbrace{
+    \begin{tabular}{cc}
+        0,1 2 \\
+        0,0 1 \\
+        1,0 3 \\
+        1,1 4
+    \end{tabular}
+    }_\text{C.txt}
+    $$
+
+    You need to implement a MapReduce program that takes matrices $A,B$ in the above format as input, computes their product, and outputs the result as a list of key-value pairs.
+
+    The assignment provides auxiliary scripts that simplify the task:
+    \begin{enumerate}
+        \item \mdinlinecode{generate\_task.py} — generates random matrices $A,B$ of the specified size, computes their product, and saves $A,B,C$ in the required format.
+
+        Example run: \mdinlinecode{python3 generate\_task.py -n 10 -m 20 -k 30}
+        \item \mdinlinecode{check\_answer.py} — compares the true result \mdinlinecode{C.txt} with the one produced by the MapReduce program. The script accounts for the result being split into multiple files according to the number of reducers.
+
+        Example run: \mdinlinecode{python3 check\_answer.py -n 10 -m 20 -k 30}
+    \end{enumerate}
+
+    You must implement the following scripts:
+    \begin{enumerate}
+        \item \mdinlinecode{mapper.py}, \mdinlinecode{reducer.py} — code for the mapper and reducer for matrix multiplication
+        \item \mdinlinecode{run\_hadoop.sh} — code for preparing directories on NameNode, running the Hadoop Streaming job, and copying the result from HDFS to the local filesystem
+        \item \mdinlinecode{run.sh} — script to run the entire pipeline. This script should accept the problem dimensions ($n,m,k$), the number of mappers, and the number of reducers as command-line arguments.
+
+        First, the matrices $A,B,C$ of the specified size are generated, then the data is copied into the container, and the Hadoop Streaming job is launched on NameNode. After the MapReduce job completes, the script copies the result from the container and checks its correctness.
+
+        Example run: \mdinlinecode{sh run.sh 10 20 30 5 5}
+    \end{enumerate}
+
+    As a result, the project must exactly match the structure shown in Figure \ref{fig:proj_struct}. Submit an archive of this structure named \mdinlinecode{<FullName>\_task\_02.1.zip}. The \mdinlinecode{data} folder may be omitted.
+
+    Full points will be awarded only if running \mdinlinecode{run.sh} with different parameters completes successfully. Your program must correctly handle problem dimensions $n,m,k \le 500$ for any number of mappers and reducers.
+
+\begin{figure}[H]
+    \begin{center}
+        \begin{minipage}[b]{0.8\textwidth}
+            \renewcommand*\DTstylecomment{\color{blue}}
+            \renewcommand*\DTstyle{\ttfamily\textcolor{red}}
+            \dirtree{%
+            .1 matmul\_streaming.
+            .2 data.
+            .3 input\DTcomment{Input data for the MapReduce job}.
+            .4 A.txt.
+            .4 B.txt.
+            .3 output\DTcomment{Result of the MapReduce job}.
+            .4 \_SUCCESS.
+            .4 part-00000.
+            .4 ....
+            .3 C.txt\DTcomment{Correct answer for the task}.
+            .2 src\DTcomment{Source code of the MapReduce algorithm}.
+            .3 mapper.py.
+            .3 reducer.py.
+            .2 check\_answer.py\DTcomment{Script to verify correctness of the solution}.
+            .2 generate\_task.py\DTcomment{Script to generate data for the matrix multiplication task}.
+            .2 run\_hadoop.sh\DTcomment{Script to launch Hadoop Streaming on NameNode}.
+            .2 run.sh\DTcomment{Script for data generation, MR launch, and verification}.
+            }
+        \end{minipage}
+    \end{center}
+    \caption{\label{fig:proj_struct}Required project structure}
+\end{figure}
+
+A few important notes that may help with the task:
+\begin{enumerate}
+    \item You may use the \href{https://github.com/nakhodnov17/docker-hadoop-spark/tree/master/examples/wordcount_streaming}{Word Count solution}. In particular, check the \mdinlinecode{run\_hadoop.sh} script.
+    \item To pass problem dimensions into the mapper and reducer, you can use environment variables. More about setting environment variables for workers can be found \href{https://hadoop.apache.org/docs/current/hadoop-streaming/HadoopStreaming.html#Setting_Environment_Variables}{here}.
+    \item Flags for changing the number of mappers, reducers, and other fine-tuning options for Hadoop Streaming can be found in the \href{https://hadoop.apache.org/docs/current/hadoop-streaming/HadoopStreaming.html}{documentation}.
+    \item You may need to determine which file is being processed by a worker at the moment. For this purpose, you can also use \href{https://github.com/nakhodnov17/docker-hadoop-spark/blob/a7672eb8b7b4ddcc8b6871353e0e14fb706c68db/examples/wordcount_streaming/src/mapper.py#L8}{environment variables}.
+    \item When printing and saving floating-point numbers, pay attention to the number of digits after the decimal point. About 5 digits are recommended for acceptable precision. Keep in mind that too many digits can significantly slow down MapReduce jobs due to increased data volume.
+    \item To copy data into and out of the container, you can use the special \href{https://docs.docker.com/engine/reference/commandline/cp/}{docker commands}.
+    \item To run programs inside the container, you can also use the special \href{https://docs.docker.com/engine/reference/commandline/exec/}{docker commands}.
+\end{enumerate}
+
+\end{section}
+
+
+\begin{section}{Recommender Systems (60\%)}
+
+\begin{subsection}{Introduction}
+Today, Recommender Systems are found everywhere. On an online store, you may see blocks with “similar products,” on a news site — “related articles” or “stories you may be interested in,” and on a movie rental site — “similar movies” or “recommended for you” sections. We will focus on movie recommendations, but the same principles apply to other domains.
+
+The goal of a Recommender System is to find a small set of movies (\mdinlinecode{Item}) that are most likely to interest a particular user (\mdinlinecode{User}), using information about their previous activity and movie characteristics.
+
+A well-known example is the \mdinlinecode{Netflix} competition launched in 2006, which challenged participants to predict user ratings for movies (on a scale from $1$ to $5$) based on a known subset of ratings. The winner was the team that improved the \mdinlinecode{RMSE} on the test dataset by $10\%$ compared to Netflix’s internal solution. Many new methods emerged during the competition.
+
+Typically, the dataset consists of triples $(u, i, r_{u,i})$, where $u$ is the user, $i$ is the movie, and $r_{u,i}$ is the rating. We assume that ratings are normalized to the interval $[0, 1]$.
+\end{subsection}
+
+\begin{subsection}{Neighborhood Approach in Collaborative Filtering}
+Given a user-item rating matrix, we can define the \mdinlinecode{adjusted cosine similarity} measure of similarity between items $i$ and $j$ as vectors in user space:
+\begin{ceqn}
+\begin{equation} \label{eq:1}
+sim(i, j) = \frac{\sum\limits_{u \in U_{i,j}}(r_{u, i} - \overline{r_{u}})(r_{u,j} - \overline{r_{u}})}{\sqrt{\sum\limits_{u \in U_{i,j}}(r_{u, i} - \overline{r_{u}})^{2}}\sqrt{\sum\limits_{u \in U_{i,j}}(r_{u, j} - \overline{r_{u}})^{2}}}
+\end{equation}
+\end{ceqn}
+where $U_{i,j}$ is the set of users who rated both movies $i$ and $j$, and $\overline{r_{u}}$ is the average rating of user $u$.
+
+Predicted ratings for unknown movies are computed as follows:
+\begin{ceqn}
+\begin{equation} \label{eq:2}
+\hat{r}_{u,i}=\frac{\sum\limits_{j \in I_{u}}sim(i,j)r_{u,j}}{\sum\limits_{j \in I_{u}}sim(i,j)}
+\end{equation}
+\end{ceqn}
+where $I_{u}$ is the set of movies rated by user $u$. This approach is called \mdinlinecode{item-oriented}. Note that $sim(i, j) \in [-1, 1]$. This can lead to division by zero or $\hat{r}_{u,i}$ values outside the range $[0, 1]$. To prevent this, we set all negative $sim(i, j)$ values to zero.
+\end{subsection}
+
+\begin{subsection}{Assignment Description}
+In this assignment, you are required to implement collaborative filtering using formulas \ref{eq:1}, \ref{eq:2} with the \mdinlinecode{MapReduce} framework. Your program should take as input a list of triples $(u, i, r_{u,i})$ and a list mapping movie IDs to movie titles, and output for each user the \textbf{top 100} movies with the highest predicted ratings.
+
+When computing recommendations, consider only movies that the user has not yet rated. Recommendations should be sorted in descending order of predicted rating. If two predictions are equal, the movie with the lexicographically smaller title should come first.
+
+Each line in the prediction output file must be formatted as follows:
+\begin{figure}[H]
+    \begin{center}
+        \textbf{<user\_id>@<rating\_1>\%<film\_name\_1>@...@<rating\_100>\%<film\_name\_100>}\\
+    \end{center}
+    \caption{\label{fig:out_format}Output data format}
+\end{figure}
+
+The dataset to use is \href{https://grouplens.org/datasets/movielens/latest/}{MovieLens}. Use the \mdinlinecode{small} version. The output of your program on this dataset should be submitted with your assignment (folder \mdinlinecode{data/output/final}).
+
+You must also provide a detailed description of your solution in the file \mdinlinecode{description.md/html/pdf}. Specifically:
+\begin{enumerate}
+	\item A description of each stage of your program and each map-reduce job.
+	\item Time and memory complexity for each mapper and reducer, using the following notations: $U$ — total number of users, $I$ — total number of movies, $M$ — number of mappers, $R$ — number of reducers, $\alpha$ — the average fraction of movies rated by one user (equivalently, the average fraction of users who rated one movie, and the ratio of known ratings to total possible $UI$ ratings).
+	\item Total runtime of your program.
+	\item Solutions to bonus tasks (if completed).
+\end{enumerate}
+
+\end{subsection}
+
+\begin{subsection}{Technical Implementation Details}
+Please note the following points that will help you complete the task successfully:
+\begin{itemize}
+	\item \href{https://github.com/nakhodnov17/docker-hadoop-spark/tree/master/examples/wordcount_streaming}{Example of running a Hadoop Streaming program on a cluster.}
+	\item To use custom separators, use the following options:
+	\item[]
+		\begin{minted}{bash}
+		-D stream.num.map.output.key.fields=<number_of_fields_for_key>
+		-D stream.map.output.field.separator=<custom_separator>
+		-D stream.reduce.input.field.separator=<custom_separator>
+		-D mapreduce.map.output.key.field.separator=<custom_separator>
+		\end{minted}
+	\item For implementing secondary sorting, the following options may be useful:
+	\item[]
+		\begin{minted}{bash}
+		-D mapreduce.partition.keycomparator.options=<sort_options>
+		-D mapreduce.job.output.key.comparator.class= \
+				org.apache.hadoop.mapred.lib.KeyFieldBasedComparator
+		-D mapreduce.partition.keypartitioner.options=<partition_options>
+		-partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner
+		\end{minted}
+	\item To manage memory allocated to containers, use:
+	\item[]
+		\begin{minted}{bash}
+		-D mapreduce.map.memory.mb=<physical_memory_for_each_mapper>
+		-D mapreduce.reduce.memory.mb=<physical_memory_for_each_reducer>
+		-D mapreduce.map.java.opts=-Xmx<heap_size_for_each_mapper>m
+		-D mapreduce.reduce.java.opts=-Xmx<heap_size_for_each_reducer>m
+		-D yarn.nodemanager.vmem-pmem-ratio=<virtual_to_physical_memory_ratio>
+		\end{minted}
+	\item For details on these options and other parameters, see the \href{https://hadoop.apache.org/docs/current/hadoop-streaming/HadoopStreaming.html}{Hadoop Streaming documentation.}
+	\item Note that $sim(i, i) = 1 \;\forall i \in \{1,...,I\}$. Also, ensure there is no division by zero in formulas \ref{eq:1} and \ref{eq:2} by adding a small constant to the denominator (e.g., \mdinlinecode{$10^{-9}$}).
+	\item Use exactly \mdinlinecode{$3$} digits after the decimal point when transferring floating-point numbers between workers.
+	\item In \mdinlinecode{movies.csv}, movie titles may contain commas, so use Python’s \mdinlinecode{csv.reader} to correctly split lines in this file.
+	\item The task can be implemented so that total runtime is about \mdinlinecode{$\approx 30$ minutes}. If your program takes significantly longer, it is likely non-optimal. Non-optimal implementations will be heavily penalized.
+\end{itemize}
+
+\end{subsection}
+
+\begin{subsection}{Submission Format}
+You must use Docker containers to run the Hadoop cluster. See the deployment guide in \href{https://github.com/nakhodnov17/docker-hadoop-spark}{this repository}. Other submission formats are allowed only with instructor approval.
+
+\begin{figure}[H]
+    \begin{center}
+        \begin{minipage}[b]{0.8\textwidth}
+            \renewcommand*\DTstylecomment{\color{blue}}
+            \renewcommand*\DTstyle{\ttfamily\textcolor{red}}
+            \dirtree{%
+            .1 collaborative\_filtering.
+            .2 data.
+            .3 input\DTcomment{Input data for the MapReduce task}.
+            .4 rating.csv.
+            .4 movies.csv.
+            .3 output\DTcomment{Output of all MapReduce jobs}.
+            .4 stage\_1.
+            .5 \_SUCCESS.
+            .5 part-00000.
+            .5 ....
+            .4 ....
+            .4 final\DTcomment{Final recommendations}.
+            .5 \_SUCCESS.
+            .5 part-00000.
+            .5 ....
+            .2 src\DTcomment{Source code of the MapReduce algorithm}.
+            .3 mapper\_1.py.
+            .3 reducer\_1.py.
+            .3 ....
+            .3 mapper\_n.py.
+            .3 reducer\_n.py.
+            .2 description.md\DTcomment{Solution description}.
+            .2 run\_hadoop.sh\DTcomment{Script to run Hadoop Streaming on namenode}.
+            .2 run.sh\DTcomment{Script to launch the MR task}.
+            }
+        \end{minipage}
+    \end{center}
+    \caption{\label{fig:proj_struct}Required project structure}
+\end{figure}
+
+As a result, the project must exactly match the structure shown in Figure \ref{fig:proj_struct}.  
+Submit an archive of this structure named \mdinlinecode{<FullName>\_task\_02.2.zip}.
+
+Details of the submission format:
+\begin{itemize}
+    \item The \mdinlinecode{run.sh} script must provide full task execution: from uploading data into the docker container and running \mdinlinecode{run\_hadoop.sh} to copying the results back from the container. Running the assignment must require only executing this script.
+	\item The \mdinlinecode{description.md} file contains your solution description. All formulas must be typeset using \LaTeX. You may use \mdinlinecode{Markdown} syntax for formatting. A \mdinlinecode{Jupyter Notebook} saved as \mdinlinecode{HTML} is also acceptable.
+	\item The \mdinlinecode{src} folder contains code used in the assignment. For each map-reduce stage, files must be named \mdinlinecode{mapper\_<stage\_n>.py}, \mdinlinecode{reducer\_<stage\_n>.py}. Any additional scripts (e.g., combiners) must include the corresponding stage number.
+	\item The \mdinlinecode{data/input} folder contains the input files (\mdinlinecode{ratings.csv}, \mdinlinecode{movies.csv}). During evaluation, these input files will be placed in this directory.
+    \item After running \mdinlinecode{run.sh}, the \mdinlinecode{data/output} folder must contain all program outputs. Specifically, inside \mdinlinecode{data/output/stage\_<stage\_n>} should be the reducer output (or mapper output in case of a map-only task). The \mdinlinecode{final} folder must contain the final recommendation list. You may store any intermediate results in \mdinlinecode{data/output}, but only the contents of \mdinlinecode{data/output/final} need to be submitted.
+    \item Processing data outside HDFS for use in Replicated Join is allowed.
+    \item Using map-reduce stages with only one reducer is prohibited.
+    \item Full marks will be awarded only if \mdinlinecode{run.sh} runs successfully on different input datasets.
+\end{itemize}
+
+\end{subsection}
+
+\begin{subsection}{Bonus Tasks}
+\subsection{Analysis of the Obtained Solution (+20\%)}
+Complete the following:
+\begin{enumerate}
+	\item Implement a data generation script that produces realistic synthetic data for various $U, I, \alpha$.
+	\item Measure runtime of each stage of your program for different values of $U, I, \alpha, M, R$. Be sure to include tests on a dataset larger than the \mdinlinecode{small} dataset.
+	\item Plot runtime dependencies on various parameters.
+	\item Demonstrate, using your experimental data, that your solution’s asymptotic complexity matches the theoretical one (e.g., use \mdinlinecode{log-log} plots). If discrepancies occur, explain why.
+\end{enumerate}
+\subsection{Framework Usage (+10\%)}
+Implement your program using the \href{https://mrjob.readthedocs.io/en/latest/}{mrjob} or \href{https://crs4.github.io/pydoop/index.html}{Pydoop} framework.
+\subsection{Running on Large Data (+10\%)}
+Run your program on the \mdinlinecode{large} version of the MovieLens dataset. Attach the resulting output to your solution.
+\end{subsection}
+\end{section}
+
+\end{document}
