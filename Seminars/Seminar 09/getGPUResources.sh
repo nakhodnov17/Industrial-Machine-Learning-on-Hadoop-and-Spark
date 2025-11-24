@@ -1,0 +1,1 @@
+echo '{"name":"gpu","addresses":["0"]}'
